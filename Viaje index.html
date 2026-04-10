@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viaggio in Italia 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;min-height:100vh;padding:12px}
+.wrap{max-width:460px;margin:0 auto}
+h1{font-size:16px;font-weight:600;text-align:center;margin-bottom:12px;color:#222}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.nav button{flex:0 0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;color:#333;font-weight:500}
+.nav button:hover{background:#f0ede8}
+.nav button:disabled{opacity:.35;cursor:default}
+.day-counter{flex:1;text-align:center;font-size:13px;color:#666}
+.card{background:#fff;border:1px solid #e0ddd8;border-radius:14px;overflow:hidden;margin-bottom:8px}
+.card-header{padding:14px 16px;border-bottom:1px solid #eee;background:#faf9f7}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.date{font-size:12px;color:#888}
+.flight-badge{background:#fff3cd;color:#856404;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.checkin-badge{background:#d1f5e0;color:#166534;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.city{font-size:19px;font-weight:600;color:#1a1a1a}
+.region{font-size:12px;color:#999;margin-top:2px}
+.section{padding:12px 16px;border-bottom:1px solid #f0ede8}
+.section:last-child{border-bottom:none}
+.sec-label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.sec-content{font-size:13px;color:#333;line-height:1.55}
+.hotel-box{background:#f0f7ff;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.hotel-addr{font-size:13px;color:#1a1a1a;line-height:1.4}
+.map-btn{display:inline-flex;align-items:center;gap:5px;background:#1a73e8;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;width:fit-content}
+.map-btn:hover{background:#1558c0}
+.map-btn svg{width:13px;height:13px;fill:currentColor}
+.meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meal-box{background:#f8f7f5;border-radius:8px;padding:9px 10px}
+.meal-label{font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.meal-name{font-size:12px;color:#333;line-height:1.4}
+.meal-map{display:inline-flex;align-items:center;gap:4px;margin-top:6px;color:#1a73e8;font-size:11px;font-weight:500;cursor:pointer;background:none;border:none;padding:0;text-decoration:none}
+.meal-map svg{width:11px;height:11px;fill:currentColor}
+.reservation-box{background:#fff8f0;border:1px solid #fde8c8;border-radius:8px;padding:9px 12px}
+.res-text{font-size:12px;color:#7c4a00;line-height:1.45}
+.dishes{display:flex;flex-wrap:wrap;gap:5px;margin-top:0}
+.dish{background:#eef4ff;color:#1a4a8a;font-size:11px;padding:3px 9px;border-radius:20px}
+.sleep-row{display:flex;align-items:center;gap:7px;font-size:12px;color:#666}
+.dot{width:7px;height:7px;border-radius:50%;background:#4caf50;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🇮🇹 Viaggio in Italia – Aprile/Maggio 2026</h1>
+  <div class="nav">
+    <button id="prevBtn" onclick="go(-1)">← Indietro</button>
+    <div class="day-counter" id="counter"></div>
+    <button id="nextBtn" onclick="go(1)">Avanti →</button>
+  </div>
+  <div id="card"></div>
+</div>
+
+<script>
+const PIN=`<svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+
+function mapsUrl(query){
+  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(query);
+}
+function mapsUrlDirect(url){ return url; }
+
+const days=[
+{date:"Ven 17 Apr",city:"In volo",region:"Partenza da Denver",checkin:false,flight:"17:30",hotel:null,hotelUrl:null,
+ activities:"Partenza da casa",pranzo:"Casa",cena:"Aereo",pranzoQuery:null,cenaQuery:null,reservation:"",
+ dishes:[]},
+
+{date:"Sab 18 Apr",city:"Sessano del Molise · Isernia",region:"Molise",checkin:true,flight:"Arrivo 12:20",
+ hotel:"Isernia, Molise",hotelUrl:"https://maps.app.goo.gl/kxTUW2mwBihDYCZo8",
+ activities:"Taglio capelli da Doriana Cute e Capelli alle 15h (P.za Salvatore Buttaroni 2, Genzano di Roma) · Sessano del Molise · Miranda",
+ pranzo:"Fraschetta Antico Grottino o Osteria Dar Vignarolo (Ariccia)",
+ cena:"La Pazzeria (Miranda) · ZanziBar (Sessano del Molise)",
+ pranzoQuery:"Fraschetta Antico Grottino Ariccia",cenaQuery:"La Pazzeria Miranda Molise",
+ reservation:"—",
+ dishes:["Cavatelli al ragù","Agnello al forno","Sopressata molisana"]},
+
+{date:"Dom 19 Apr",city:"Agnone · Isernia",region:"Molise",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Cascata Schioppo · Parcheggio Parco delle Cascate · Cascata di Carpino · Castello Caldora · Agnone (Museo Marinelli) · Isernia (Museo Paleolitico · Cattedrale di San Pietro · Fontana Fraterna)",
+ pranzo:"Osteria Mia (Agnone)",cena:"Existo – Osteria Molisana (Isernia)",
+ pranzoQuery:"Osteria Mia Agnone",cenaQuery:"Existo Osteria Molisana Isernia",
+ reservation:"Prenotato via Instagram",
+ dishes:["Cavatelli e fagioli","Zuppa di lenticchie","Scamorza molisana"]},
+
+{date:"Lun 20 Apr",city:"Pietracupa · Termoli · Campobasso",region:"Molise",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Pietracupa · Termoli (Castello Svevo · Cattedrale di San Basso · Spiaggia · Lungomare) · Castello Campobasso",
+ pranzo:"Il Grottino",cena:"Ristorante Aciniello (Campobasso · 20h)",
+ pranzoQuery:"Il Grottino Campobasso",cenaQuery:"Ristorante Aciniello Campobasso",
+ reservation:"Confermato via WhatsApp",
+ dishes:["Taccozze e fagioli","Baccalà con peperoni cruschi","Pallotte cac' e ove"]},
+
+{date:"Mar 21 Apr",city:"Barrea · Civitella Alfedena · Sulmona",region:"Abruzzo",checkin:true,flight:null,
+ hotel:"Via Ancinale 15, Pacentro (AQ) 67030",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Ancinale+15+Pacentro+Abruzzo+67030",
+ activities:"Barrea · Lago di Barrea (passeggiata 30 min) · Civitella Alfedena · Sentiero G5 – Cascate delle Ninfe · Check-in",
+ pranzo:"Oasi del Lago o Il Guado della Valle (Civitella Alfedena)",
+ cena:"Trattoria Don Ciccio (Sulmona)",
+ pranzoQuery:"Oasi del Lago Civitella Alfedena",cenaQuery:"Trattoria Don Ciccio Sulmona",
+ reservation:"Scrivere via WA entro 1 Aprile",
+ dishes:["Arrosticini","Maccheroni alla chitarra","Confetti di Sulmona"]},
+
+{date:"Mer 22 Apr",city:"Scanno · Pescocostanzo · Sulmona",region:"Abruzzo",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Lago di San Domenico · Eremo di San Domenico · Punto Panoramico · Lago di Scanno (S. Maria della Valle · Sant'Eustachio · Belvedere del Cuore) · Pescocostanzo · Sulmona",
+ pranzo:"Antica Trattoria Via Roma (Scanno)",
+ cena:"Ristorante Di Paolino (Pescocostanzo) — Piano B: Il Setaccio",
+ pranzoQuery:"Antica Trattoria Via Roma Scanno",cenaQuery:"Ristorante Di Paolino Pescocostanzo",
+ reservation:"Chiamare +39 0864 640080 (Di Paolino)",
+ dishes:["Maccheroni alla chitarra","Fiadoni","Parrozzo"]},
+
+{date:"Gio 23 Apr",city:"Caramanico Terme · Valle Orfento · Pacentro",region:"Abruzzo",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Caramanico Terme · Valle dell'Orfento – Sentiero delle Scalelle · Pacentro",
+ pranzo:"La Noce De Novellis Rosa Maria o Collina del Cavaliere (Caramanico)",
+ cena:"Cantina di Biffi (Sulmona)",
+ pranzoQuery:"La Noce De Novellis Caramanico Terme",cenaQuery:"Cantina di Biffi Sulmona",
+ reservation:"Prenotato via WhatsApp",
+ dishes:["Agnello cacio e uova","Scrippelle 'mbusse","Bocconotti"]},
+
+{date:"Ven 24 Apr",city:"Val Fondillo · Opi · Pescasseroli",region:"Abruzzo (PNALM)",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Sentiero F2 – Val Fondillo · Opi · Fattoria di Morgana · Pescasseroli · Olmo di Bobbi",
+ pranzo:"Bar Ristoro Valfondillo o La Vecchia Locanda (Opi)",
+ cena:"L'Antica Locanda (Pacentro)",
+ pranzoQuery:"Bar Ristoro Val Fondillo",cenaQuery:"L'Antica Locanda Pacentro",
+ reservation:"Confermata via WhatsApp",
+ dishes:["Arrosticini alla brace","Minestra di farro","Cicerchie in umido"]},
+
+{date:"Sab 25 Apr",city:"Santo Stefano di Sessanio · Calascio",region:"Abruzzo",checkin:true,flight:null,
+ hotel:"Via Plaja, Calascio (AQ) 67020",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Plaja+Calascio+Abruzzo+67020",
+ activities:"Santo Stefano di Sessanio · Pranzo · Check-in · Calascio · Santa Maria della Pietà · Rocca Calascio (tramonto)",
+ pranzo:"La Zeppa Mangia e Bevi o Cantina Chiesamadre (Santo Stefano)",
+ cena:"Trattoria Le 4 Ville (Castelvecchio Calvisio)",
+ pranzoQuery:"La Zeppa Mangia e Bevi Santo Stefano di Sessanio",cenaQuery:"Trattoria Le 4 Ville Castelvecchio Calvisio",
+ reservation:"Prenotato via WhatsApp",
+ dishes:["Pecorino di Farindola","Gnocchi di patate al sugo","Agnello allo spiedo"]},
+
+{date:"Dom 26 Apr",city:"Campo Imperatore · Castel del Monte",region:"Abruzzo (Gran Sasso)",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Campo Imperatore · Sentiero: Hotel CI → Sella Monte Aquila (opz. Rifugio Garibaldi / Rifugio Duca degli Abruzzi) · Castel del Monte",
+ pranzo:"Ristoro Mucciante",cena:"La Montanara (Calascio)",
+ pranzoQuery:"Ristoro Mucciante Campo Imperatore",cenaQuery:"La Montanara Calascio",
+ reservation:"Confermata via telefono a nome di Paola Osuna – 20h (+39 392 641 2339)",
+ dishes:["Polenta con spezzatino","Zuppa di lenticchie","Ricotta fresca di pecora"]},
+
+{date:"Lun 27 Apr",city:"L'Aquila · Bominaco",region:"Abruzzo",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Basilica di Collemaggio · Fortezza Spagnola · Centro storico · Bominaco",
+ pranzo:"Arrosticini Divini o La Malandrina (L'Aquila)",
+ cena:"Ristorante Da Clara (Calascio)",
+ pranzoQuery:"Arrosticini Divini L'Aquila",cenaQuery:"Ristorante Da Clara Calascio",
+ reservation:"Prenotato via WhatsApp",
+ dishes:["Arrosticini","Pizza rustica abruzzese","Sise delle monache"]},
+
+{date:"Mar 28 Apr",city:"Teramo · Ascoli Piceno",region:"Marche",checkin:true,flight:null,
+ hotel:"Via Tornasacco, Ascoli Piceno (AP) 63100",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Tornasacco+Ascoli+Piceno+Marche+63100",
+ activities:"Trasferimento · Sosta a Teramo · Forte Malatesta · Piazza Arringo · Ponte Romano · Piazza del Popolo · Teatro Ventidio Basso · Fortezza Pia · Olive Ascolane · Caffè Meletti",
+ pranzo:"Focaccina Teramo o Trattoria Da Mauro (Teramo)",
+ cena:"Osteria Nonna Nina (Ascoli Piceno)",
+ pranzoQuery:"Trattoria Da Mauro Teramo",cenaQuery:"Osteria Nonna Nina Ascoli Piceno",
+ reservation:"Chiamare in Aprile",
+ dishes:["Olive ascolane","Vincisgrassi","Brodetto di pesce"]},
+
+{date:"Mer 29 Apr",city:"Grottammare · Ripatransone · Offida",region:"Marche",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Terrazza Panoramica Grottammare Alta · Ripatransone · Cantina Ciù Ciù · Castignano (opz.) · Offida – S. Maria della Rocca · Torre degli Ercolani · Aperitivo in Piazza del Popolo",
+ pranzo:"Cantina Ciù Ciù – degustazione prenotata 13:00",
+ cena:"Quanto Basta (Ascoli Piceno) — Piano B: Osteria Ophis (Offida)",
+ pranzoQuery:"Cantina Ciù Ciù Offida",cenaQuery:"Quanto Basta Ascoli Piceno",
+ reservation:"Confermato Quanto Basta via WhatsApp",
+ dishes:["Olive ascolane","Ciauscolo","Passatelli in brodo"]},
+
+{date:"Gio 30 Apr",city:"Gole dell'Infernaccio · Montemonaco · Montefortino",region:"Sibillini, Marche",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Gole dell'Infernaccio (sentiero 2–3h) · Montemonaco · Negozi di Pecorino dei Sibillini · Montefortino · Lago di Gerosa · Castel Trosino (tramonto?)",
+ pranzo:"Rist. La Scampagnata o La Locanda della Sventola (Montemonaco)",
+ cena:"La Taverna del Longobardo (Castel Trosino) — Piano B: Ascoli Piceno",
+ pranzoQuery:"Ristorante La Scampagnata Montemonaco",cenaQuery:"La Taverna del Longobardo Castel Trosino",
+ reservation:"Chiamare +39 333 147 3445",
+ dishes:["Pecorino dei Sibillini","Tagliatelle al tartufo nero","Agnello in porchetta"]},
+
+{date:"Ven 1 Mag",city:"Torre di Palme · Sirolo",region:"Marche (Riviera del Conero)",checkin:true,flight:null,
+ hotel:"Via Urbani 3, Sirolo (AN) 60020",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Urbani+3+Sirolo+Marche+60020",
+ activities:"Viaggio · Pranzo a Torre di Palme · Check-in · Parco del Conero (Sentiero Due Sorelle · Pian Grande) · Spiaggia Urbani · Spiaggia San Michele · Centro Storico Sirolo",
+ pranzo:"Il Cortile o La Fonte di Mosè (Torre di Palme)",
+ cena:"Ristorante Della Rosa (Sirolo)",
+ pranzoQuery:"Il Cortile Torre di Palme",cenaQuery:"Ristorante Della Rosa Sirolo",
+ reservation:"Prenotare online entro 2 Aprile",
+ dishes:["Brodetto alla marchigiana","Seppie con piselli","Ciauscolo su bruschetta"]},
+
+{date:"Sab 2 Mag",city:"Recanati · Macerata · Numana",region:"Marche",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Recanati (Casa di Leopardi) · Montelupone (opz.) · Macerata · Montecassiano · Pomeriggio a Numana · Opz. Osimo e Camerano",
+ pranzo:"Osteria Agnese o Porchetteria Centrale (Macerata)",
+ cena:"Ristorantino Loscottadito (Numana)",
+ pranzoQuery:"Osteria Agnese Macerata",cenaQuery:"Ristorantino Loscottadito Numana",
+ reservation:"WA confermato – chiamare una settimana prima per riconfermare",
+ dishes:["Vincisgrassi","Porchetta marchigiana","Moretta di Fano (digestivo)"]},
+
+{date:"Dom 3 Mag",city:"Grotte di Frasassi · Fabriano · Loreto",region:"Marche",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Grotte di Frasassi (~1.5h) · Abbazia di San Vittore alle Chiuse · Fabriano (pranzo) · Serra San Quirico · Cena a Loreto (Santuario della Santa Casa)",
+ pranzo:"Osteria San Biagio o Taverna da Ivo o Il Piacere della Carne (Fabriano)",
+ cena:"Cantina Del Moro – da Bebo (Loreto)",
+ pranzoQuery:"Osteria San Biagio Fabriano",cenaQuery:"Cantina Del Moro da Bebo Loreto",
+ reservation:"Prenotazione confermata via Google",
+ dishes:["Strangozzi al tartufo","Crescia sfogliata","Visciolata (vino)"]},
+
+{date:"Lun 4 Mag",city:"Dozza · Brisighella · Forlì",region:"Emilia-Romagna",checkin:true,flight:null,
+ hotel:"Best Western San Giorgio – Via Ravegnana 538/D, 47122 Forlì FC (Prepagato Expedia)",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Ravegnana+538+Forl%C3%AC+47122",
+ activities:"Dozza (murales · Rocca Sforzesca · Enoteca Regionale E-R) · Brisighella (Via degli Asini · Rocca Manfrediana · Torre dell'Orologio · Santuario del Monticino) · Forlì · Cena con Estefania",
+ pranzo:"La Scuderia o La Bottega (Dozza) · La Grotta o Trattoria la Casetta (Brisighella)",
+ cena:"L'Amorosina (Forlì) – prenotato da Estefania",
+ pranzoQuery:"La Scuderia Dozza",cenaQuery:"L'Amorosina Forli",
+ reservation:"Organizzato da Estefania",
+ dishes:["Piadina romagnola","Strozzapreti al ragù","Sangiovese di Romagna"]},
+
+{date:"Mar 5 Mag",city:"Chioggia · Udine",region:"Friuli-Venezia Giulia",checkin:true,flight:null,
+ hotel:"Via Patriarchi 71B, Cormons (GO) 34071",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Patriarchi+71B+Cormons+Friuli+34071",
+ activities:"Chioggia (sosta pranzo) · Udine – Libreria Tarantola · Piazza Libertà · Loggia del Lionello · Castello · Colle del Castello · Piazza San Giacomo (aperitivo)",
+ pranzo:"Bacaro La Baia dei Porci o Oro Nero (Chioggia)",
+ cena:"Hostaria Alla Tavernetta (Udine)",
+ pranzoQuery:"Bacaro La Baia dei Porci Chioggia",cenaQuery:"Hostaria Alla Tavernetta Udine",
+ reservation:"Prenotato via sito web",
+ dishes:["Frico","Cjalsons","Muset e brovada"]},
+
+{date:"Mer 6 Mag",city:"Laghi di Fusine · Venzone",region:"Friuli-Venezia Giulia",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Parcheggio Laghi di Fusine · Lago Inferiore e Superiore · Opz. Rifugio Zacchi / Orrido dello Slizza · Venzone (pomeriggio)",
+ pranzo:"Pizzeria da Giannino o Bar Trattoria Miramonti (Tarvisio)",
+ cena:"Al Giardinetto (Cormons)",
+ pranzoQuery:"Pizzeria da Giannino Tarvisio",cenaQuery:"Al Giardinetto Cormons",
+ reservation:"Confermata via telefono a nome di Paola Osuna – 20h (+39 0481 60257)",
+ dishes:["Blecs con funghi","Gubana","Refosco dal Peduncolo Rosso"]},
+
+{date:"Gio 7 Mag",city:"Gorizia · Cividale del Friuli",region:"Friuli-Venezia Giulia",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Gorizia – Nova Gorica · Monastero di Castagnevizza · Castello di Gorizia · Piazza della Transalpina · Monte Sabotino · Cividale del Friuli – Ponte del Diavolo · Tempio Longobardo",
+ pranzo:"Osteria Ca' di Pieri o La Kantinetta (Gorizia)",
+ cena:"Antica Trattoria Nardini / Dominissini o Alla Speranza (Cividale)",
+ pranzoQuery:"Osteria Ca di Pieri Gorizia",cenaQuery:"Antica Trattoria Nardini Cividale del Friuli",
+ reservation:"Confermata via email",
+ dishes:["Goulash alla triestina","Iota (minestra)","Frico croccante"]},
+
+{date:"Ven 8 Mag",city:"Collio – Cantine del Friuli",region:"Friuli-Venezia Giulia",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Venica & Venica – Dolegna del Collio (9:30) · Russiz Superiore – Capriva del Friuli (prenotata e pagata · 15h) · Livio Felluga – Cormons (se c'è tempo)",
+ pranzo:"Ristoro Porchis",cena:"Osteria da Marcello (Cormons)",
+ pranzoQuery:"Ristoro Porchis Friuli",cenaQuery:"Osteria da Marcello Cormons",
+ reservation:"Confermata via WA – cena con Marcello",
+ dishes:["Ribolla Gialla","Friulano (Tocai)","Prosciutto di San Daniele"]},
+
+{date:"Sab 9 Mag",city:"Sentiero Rilke · Miramare · Trieste",region:"Friuli-Venezia Giulia",checkin:true,flight:null,
+ hotel:"Via Carlo Ghega 3, 34132 Trieste TS",hotelUrl:"https://www.google.com/maps/search/?api=1&query=Via+Carlo+Ghega+3+Trieste+34132",
+ activities:"Sentiero Rilke · Castello Miramare · Grotta Gigante · Prosecco (aperitivo)",
+ pranzo:"Dom Bistro (Grotta Gigante)",cena:"Trattoria Suban (Trieste)",
+ pranzoQuery:"Dom Bistro Grotta Gigante Trieste",cenaQuery:"Trattoria Suban Trieste",
+ reservation:"Prenotato via sito web",
+ dishes:["Jota","Sardoni in savor","Prosciutto di Trieste"]},
+
+{date:"Dom 10 Mag",city:"Trieste",region:"Friuli-Venezia Giulia",checkin:false,flight:null,hotel:null,hotelUrl:null,
+ activities:"Canal Grande · Piazza Unità d'Italia · Teatro Romano · Castello di San Giusto · Cattedrale di San Giusto Martire · Museo Revoltella · Molo Audace (tramonto) · Caffè storici",
+ pranzo:"Cemût – Piccola osteria furlana o La Barretine",
+ cena:"Osteria da Marino (Trieste)",
+ pranzoQuery:"Cemût osteria furlana Trieste",cenaQuery:"Osteria da Marino Trieste",
+ reservation:"Chiamare il 10 Aprile – +39 040 366596",
+ dishes:["Boreto alla graisana","Strucolo in straza","Caffè triestino"]},
+
+{date:"Lun 11 Mag",city:"Francoforte",region:"Germania – transito",checkin:true,flight:"Partenza 14:40",
+ hotel:"Best Western Airport Frankfurt – De-Saint-Exupery 6, 60549 Frankfurt (Prepagato Expedia)",hotelUrl:"https://www.google.com/maps/search/?api=1&query=De-Saint-Exupery+6+Frankfurt+60549",
+ activities:"Römerberg · Römer City Hall · St. Nicholas Church · Neue Altstadt · Eiserner Steg · Main Tower bar",
+ pranzo:"Aeroporto di Trieste",cena:"Paulaner am Dom (Francoforte)",
+ pranzoQuery:null,cenaQuery:"Paulaner am Dom Frankfurt",
+ reservation:"—",
+ dishes:["Apfelwein","Grüne Soße","Handkäse mit Musik"]},
+
+{date:"Mar 12 Mag",city:"Denver",region:"Ritorno a casa",checkin:false,flight:"Partenza 11:20",hotel:null,hotelUrl:null,
+ activities:"Ritorno a Denver",pranzo:"—",cena:"—",pranzoQuery:null,cenaQuery:null,
+ reservation:"",dishes:[]}
+];
+
+let cur=0;
+function go(d){cur=Math.max(0,Math.min(days.length-1,cur+d));render()}
+
+function mapBtn(url,label){
+  if(!url) return '';
+  return `<a class="map-btn" href="${url}" target="_blank">${PIN} ${label}</a>`;
+}
+function mealMapLink(query,label){
+  if(!query) return '';
+  return `<a class="meal-map" href="${mapsUrl(query)}" target="_blank">${PIN} ${label}</a>`;
+}
+
+function render(){
+  const d=days[cur];
+  document.getElementById('counter').textContent=`Giorno ${cur+1} di ${days.length}`;
+  document.getElementById('prevBtn').disabled=(cur===0);
+  document.getElementById('nextBtn').disabled=(cur===days.length-1);
+
+  const badges=[];
+  if(d.flight) badges.push(`<span class="flight-badge">✈ ${d.flight}</span>`);
+  if(d.checkin) badges.push(`<span class="checkin-badge">🔑 Check-in</span>`);
+
+  let html=`<div class="card">
+  <div class="card-header">
+    <div class="date-row"><span class="date">${d.date}</span>${badges.join('')}</div>
+    <div class="city">${d.city}</div>
+    <div class="region">${d.region}</div>
+  </div>`;
+
+  // Hotel section on check-in days
+  if(d.checkin && d.hotel){
+    html+=`<div class="section">
+      <div class="sec-label">🏨 Albergo / Sistemazione</div>
+      <div class="hotel-box">
+        <div class="hotel-addr">${d.hotel}</div>
+        ${mapBtn(d.hotelUrl,'Naviga all\'albergo')}
+      </div>
+    </div>`;
+  }
+
+  html+=`<div class="section"><div class="sec-label">📍 Attività</div><div class="sec-content">${d.activities}</div></div>`;
+
+  // Meals
+  html+=`<div class="section"><div class="sec-label">🍽 Pasti</div>
+    <div class="meals">
+      <div class="meal-box">
+        <div class="meal-label">Pranzo</div>
+        <div class="meal-name">${d.pranzo}</div>
+        ${mealMapLink(d.pranzoQuery,'Mappa')}
+      </div>
+      <div class="meal-box">
+        <div class="meal-label">Cena</div>
+        <div class="meal-name">${d.cena}</div>
+        ${mealMapLink(d.cenaQuery,'Mappa')}
+      </div>
+    </div>
+  </div>`;
+
+  // Reservation
+  if(d.reservation && d.reservation!=='—' && d.reservation!==''){
+    html+=`<div class="section">
+      <div class="sec-label">📋 Prenotazione Cena</div>
+      <div class="reservation-box"><div class="res-text">${d.reservation}</div></div>
+    </div>`;
+  }
+
+  // Regional dishes
+  if(d.dishes.length){
+    html+=`<div class="section">
+      <div class="sec-label">🍴 Piatti regionali da provare</div>
+      <div class="dishes">${d.dishes.map(x=>`<span class="dish">${x}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  // Sleep
+  html+=`<div class="section"><div class="sleep-row"><span class="dot"></span><span>Pernottamento: ${d.hotel||d.city}</span></div></div>`;
+
+  html+=`</div>`;
+  document.getElementById('card').innerHTML=html;
+}
+render();
+</script>
+</body>
+</html>
