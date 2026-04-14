@@ -343,6 +343,26 @@ const days=[
 let cur=0;
 function go(d){cur=Math.max(0,Math.min(days.length-1,cur+d));render()}
 
+async function fetchWikiPhoto(query){
+  // 1. Use Wikipedia search API to find the best matching article
+  const searchUrl=`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=1&format=json&origin=*`;
+  const sRes=await fetch(searchUrl);
+  const sData=await sRes.json();
+  const results=sData?.query?.search;
+  if(!results||results.length===0) return null;
+  const title=results[0].title;
+  // 2. Fetch page images for that article
+  const imgUrl=`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&pithumbsize=400&format=json&origin=*`;
+  const iRes=await fetch(imgUrl);
+  const iData=await iRes.json();
+  const pages=iData?.query?.pages;
+  const page=pages[Object.keys(pages)[0]];
+  if(page?.thumbnail?.source){
+    return {img:page.thumbnail.source, title, pageUrl:`https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`};
+  }
+  return null;
+}
+
 async function loadPhotos(dayIdx, queries){
   const row = document.getElementById(`photos-${dayIdx}`);
   if(!row) return;
@@ -350,21 +370,15 @@ async function loadPhotos(dayIdx, queries){
     const ph = document.getElementById(`ph-${dayIdx}-${i}`);
     if(!ph) continue;
     try{
-      const q = queries[i].split(' ').slice(0,3).join('_');
-      const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if(data.thumbnail && data.thumbnail.source){
-        const imgUrl = data.thumbnail.source;
-        const pageUrl = data.content_urls?.desktop?.page || '#';
-        ph.outerHTML=`<a href="${pageUrl}" target="_blank" class="photo-wrap">
-          <img src="${imgUrl}" alt="${queries[i]}">
+      const result = await fetchWikiPhoto(queries[i]);
+      if(result){
+        ph.outerHTML=`<a href="${result.pageUrl}" target="_blank" class="photo-wrap">
+          <img src="${result.img}" alt="${result.title}">
         </a>`;
       } else {
-        // fallback: show label as search link
         const searchUrl=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queries[i])}`;
         ph.outerHTML=`<a href="${searchUrl}" target="_blank" class="photo-wrap" style="text-decoration:none;display:flex;align-items:center;justify-content:center;background:#f0ede8">
-          <div style="font-size:10px;color:#888;text-align:center;padding:6px">🔍<br>${queries[i]}</div>
+          <div style="font-size:10px;color:#888;text-align:center;padding:6px">📷<br>${queries[i]}</div>
         </a>`;
       }
     } catch(e){
