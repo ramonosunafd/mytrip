@@ -52,6 +52,7 @@ h1{font-size:16px;font-weight:600;text-align:center;margin-bottom:12px;color:#22
 .photo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
 .photo-wrap .photo-err{display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:10px;color:#999;text-align:center;padding:4px}
 .photo-wrap img.hidden+.photo-err{display:flex}
+.photo-loading{flex:0 0 auto;width:130px;height:90px;border-radius:8px;background:#f0ede8;display:flex;align-items:center;justify-content:center;font-size:10px;color:#bbb}
 </style>
 </head>
 <body>
@@ -342,6 +343,36 @@ const days=[
 let cur=0;
 function go(d){cur=Math.max(0,Math.min(days.length-1,cur+d));render()}
 
+async function loadPhotos(dayIdx, queries){
+  const row = document.getElementById(`photos-${dayIdx}`);
+  if(!row) return;
+  for(let i=0;i<queries.length;i++){
+    const ph = document.getElementById(`ph-${dayIdx}-${i}`);
+    if(!ph) continue;
+    try{
+      const q = queries[i].split(' ').slice(0,3).join('_');
+      const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data.thumbnail && data.thumbnail.source){
+        const imgUrl = data.thumbnail.source;
+        const pageUrl = data.content_urls?.desktop?.page || '#';
+        ph.outerHTML=`<a href="${pageUrl}" target="_blank" class="photo-wrap">
+          <img src="${imgUrl}" alt="${queries[i]}">
+        </a>`;
+      } else {
+        // fallback: show label as search link
+        const searchUrl=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queries[i])}`;
+        ph.outerHTML=`<a href="${searchUrl}" target="_blank" class="photo-wrap" style="text-decoration:none;display:flex;align-items:center;justify-content:center;background:#f0ede8">
+          <div style="font-size:10px;color:#888;text-align:center;padding:6px">🔍<br>${queries[i]}</div>
+        </a>`;
+      }
+    } catch(e){
+      if(ph) ph.textContent='—';
+    }
+  }
+}
+
 function mapBtn(url,label){
   if(!url) return '';
   return `<a class="map-btn" href="${url}" target="_blank">${PIN} ${label}</a>`;
@@ -416,24 +447,20 @@ function render(){
     </div>`;
   }
 
-  // Photos
   if(d.photos && d.photos.length){
-    const imgTags = d.photos.map((q,i)=>{
-      const url=`https://source.unsplash.com/400x280/?${encodeURIComponent(q)}&sig=${cur*10+i}`;
-      return `<div class="photo-wrap">
-        <img src="${url}" alt="${q}" onerror="this.classList.add('hidden')">
-        <div class="photo-err">${q}</div>
-      </div>`;
-    }).join('');
+    const placeholders = d.photos.map((_,i)=>
+      `<div class="photo-loading" id="ph-${cur}-${i}">caricamento…</div>`
+    ).join('');
     html+=`<div class="section">
       <div class="sec-label">📸 Foto della destinazione</div>
-      <div class="photos-row">${imgTags}</div>
+      <div class="photos-row" id="photos-${cur}">${placeholders}</div>
     </div>`;
   }
 
   html+=`<div class="section"><div class="sleep-row"><span class="dot"></span><span>Pernottamento: ${d.hotel||d.city}</span></div></div>`;
 
   document.getElementById('card').innerHTML=`<div class="card">${html}</div>`;
+  if(d.photos && d.photos.length) loadPhotos(cur, d.photos);
 }
 render();
 </script>
